@@ -688,6 +688,7 @@ body {
   <button class="tab-button" onclick="switchTab('schule')">🎓 Schule und dann?</button>
   <button class="tab-button" onclick="switchTab('berufliche-schulen')">Berufliche Schulen</button>
   <button class="tab-button" onclick="switchTab('ausbildungssuche')">🔍 Ausbildungssuche</button>
+  <button class="tab-button" onclick="switchTab('schulmatrix')">🏫 Schulen-Matrix</button>
 </div>
 
 <!-- ==================== TAB 1: Bildungswege Tool ==================== -->
@@ -3824,6 +3825,1125 @@ asFilter();
 
 </div>
 <!-- END ausbildungssuche-tab -->
+
+<!-- ==================== TAB 7: SCHULEN-MATRIX ==================== -->
+<div id="schulmatrix-tab" class="tab-content">
+
+<style>
+/* ===== SCHULEN-MATRIX STYLES ===== */
+.sm-page {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 32px 24px 60px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sm-header {
+  background: linear-gradient(135deg, #1a3a5c 0%, #0B7BB3 60%, #1a6e4f 100%);
+  color: white;
+  padding: 36px 40px;
+  border-radius: 18px;
+  margin-bottom: 32px;
+}
+
+.sm-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.sm-header p {
+  font-size: 1.05rem;
+  opacity: 0.88;
+  max-width: 700px;
+}
+
+.sm-source-note {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  margin-top: 12px;
+}
+
+/* Filter bar */
+.sm-filters {
+  background: white;
+  border-radius: 14px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  border: 1px solid #e8edf2;
+}
+
+.sm-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.sm-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.sm-filter-group label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #5a6b7a;
+}
+
+.sm-filter-group select,
+.sm-filter-group input[type="text"] {
+  padding: 10px 14px;
+  border: 2px solid #dde3ea;
+  border-radius: 9px;
+  font-size: 0.92rem;
+  color: #2C3E50;
+  background: #f8fafc;
+  transition: border-color 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.sm-filter-group select:focus,
+.sm-filter-group input:focus {
+  outline: none;
+  border-color: #0B7BB3;
+  background: white;
+}
+
+.sm-filter-group select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%230B7BB3' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+}
+
+.sm-reset-btn {
+  padding: 10px 20px;
+  background: #f0f4f8;
+  border: 2px solid #dde3ea;
+  border-radius: 9px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #5a6b7a;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+
+.sm-reset-btn:hover {
+  background: #e2e8f0;
+  border-color: #b0bec5;
+}
+
+/* Stats bar */
+.sm-stats-bar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.sm-stat-pill {
+  background: white;
+  border: 1px solid #dde3ea;
+  border-radius: 30px;
+  padding: 7px 16px;
+  font-size: 0.85rem;
+  color: #4a5568;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.sm-stat-pill strong {
+  color: #0B7BB3;
+  font-weight: 700;
+}
+
+/* View mode toggle */
+.sm-view-toggle {
+  display: flex;
+  gap: 4px;
+  background: #f0f4f8;
+  border-radius: 10px;
+  padding: 4px;
+  margin-left: auto;
+}
+
+.sm-view-btn {
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #5a6b7a;
+  background: transparent;
+  transition: all 0.2s;
+}
+
+.sm-view-btn.active {
+  background: white;
+  color: #0B7BB3;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+}
+
+/* ====== TABLE VIEW ====== */
+.sm-table-wrapper {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  border: 1px solid #e8edf2;
+  overflow: hidden;
+}
+
+.sm-table-scroll {
+  overflow-x: auto;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.sm-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.82rem;
+  min-width: 900px;
+}
+
+.sm-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.sm-table thead th {
+  background: #1a3a5c;
+  color: white;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.sm-table th.sm-prog-col {
+  text-align: left;
+  padding: 10px 14px;
+  min-width: 260px;
+  max-width: 320px;
+  background: #1a3a5c;
+  position: sticky;
+  left: 0;
+  z-index: 25;
+}
+
+.sm-table th.sm-cat-col {
+  text-align: left;
+  padding: 10px 12px;
+  min-width: 140px;
+  background: #1d4470;
+}
+
+.sm-table th.sm-school-col {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-orientation: mixed;
+  padding: 12px 6px;
+  height: 130px;
+  vertical-align: bottom;
+  min-width: 32px;
+  max-width: 40px;
+  background: #1a3a5c;
+}
+
+.sm-table tbody tr {
+  transition: background 0.15s;
+}
+
+.sm-table tbody tr:hover {
+  background: #f0f7ff !important;
+}
+
+.sm-table tbody tr.sm-section-header td {
+  background: linear-gradient(to right, #e8f0f7, #f5f8fb);
+  font-weight: 800;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #1a3a5c;
+  padding: 10px 14px;
+  border-top: 2px solid #c5d5e8;
+  border-bottom: 1px solid #d5e5f0;
+  position: sticky;
+  left: 0;
+}
+
+.sm-table tbody tr.sm-section-header td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}
+
+.sm-table tbody tr.sm-sub-header td {
+  background: #f8fafc;
+  font-style: italic;
+  color: #6b7c8d;
+  font-size: 0.78rem;
+  padding: 7px 14px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.sm-table tbody td {
+  border-bottom: 1px solid #edf2f7;
+  padding: 8px 12px;
+  vertical-align: middle;
+}
+
+.sm-table tbody td.sm-prog-name {
+  font-weight: 600;
+  color: #2c3e50;
+  padding: 9px 14px;
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 5;
+  border-right: 2px solid #e8edf2;
+}
+
+.sm-table tbody tr:hover td.sm-prog-name {
+  background: #f0f7ff;
+}
+
+.sm-table tbody td.sm-cat-cell {
+  color: #4a5568;
+  font-size: 0.8rem;
+}
+
+.sm-table tbody td.sm-check-cell {
+  text-align: center;
+  padding: 6px 4px;
+}
+
+.sm-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: #0B7BB3;
+  border-radius: 50%;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.sm-table tbody tr.sm-row-odd td {
+  background: #fafbfd;
+}
+.sm-table tbody tr.sm-row-odd td.sm-prog-name {
+  background: #fafbfd;
+}
+.sm-table tbody tr.sm-row-odd:hover td,
+.sm-table tbody tr.sm-row-odd:hover td.sm-prog-name {
+  background: #f0f7ff;
+}
+
+/* ====== CARD VIEW ====== */
+.sm-cards-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+.sm-school-card {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+  border: 1px solid #e8edf2;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.sm-school-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+
+.sm-school-card-header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #1a3a5c 0%, #0B7BB3 100%);
+  color: white;
+}
+
+.sm-school-card-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.sm-school-card-header p {
+  font-size: 0.78rem;
+  opacity: 0.8;
+}
+
+.sm-school-card-body {
+  padding: 16px 20px;
+}
+
+.sm-program-section {
+  margin-bottom: 12px;
+}
+
+.sm-program-section-title {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #1a3a5c;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1.5px solid #e8edf2;
+}
+
+.sm-program-tag {
+  display: inline-block;
+  background: #e8f4fb;
+  color: #0B7BB3;
+  border-radius: 6px;
+  padding: 4px 9px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin: 2px 3px 2px 0;
+  border: 1px solid #c5e0f0;
+}
+
+.sm-no-results {
+  text-align: center;
+  padding: 60px 20px;
+  color: #7f8c8d;
+}
+
+.sm-no-results .sm-no-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+/* Category badge colors */
+.sm-badge-bs { background: #e3f2fd; color: #1565c0; border-color: #bbdefb; }
+.sm-badge-vabo { background: #fce4ec; color: #b71c1c; border-color: #f8bbd9; }
+.sm-badge-av { background: #fff3e0; color: #bf360c; border-color: #ffcc80; }
+.sm-badge-bfs1 { background: #f3e5f5; color: #6a1b9a; border-color: #e1bee7; }
+.sm-badge-bfs2 { background: #e8eaf6; color: #283593; border-color: #c5cae9; }
+.sm-badge-bfs3 { background: #fbe9e7; color: #bf360c; border-color: #ffccbc; }
+.sm-badge-bk { background: #e0f2f1; color: #004d40; border-color: #b2dfdb; }
+.sm-badge-gym { background: #f9fbe7; color: #33691e; border-color: #dcedc8; }
+.sm-badge-zweiter { background: #ede7f6; color: #4527a0; border-color: #d1c4e9; }
+.sm-badge-fachschule { background: #fafafa; color: #424242; border-color: #e0e0e0; }
+.sm-badge-technikerschule { background: #e0f7fa; color: #006064; border-color: #b2ebf2; }
+.sm-badge-gestaltung { background: #fff8e1; color: #ff8f00; border-color: #ffe082; }
+.sm-badge-sonstige { background: #e8f5e9; color: #1b5e20; border-color: #c8e6c9; }
+
+/* Zugangsvorraussetzungen tooltip badge */
+.sm-zugangsbadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.sm-zugangsbadge.ohne { background: #fff3e0; color: #e65100; }
+.sm-zugangsbadge.hsa { background: #e3f2fd; color: #1565c0; }
+.sm-zugangsbadge.mr { background: #e8f5e9; color: #2e7d32; }
+.sm-zugangsbadge.abitur { background: #f3e5f5; color: #6a1b9a; }
+.sm-zugangsbadge.ausbildung { background: #fff8e1; color: #f57f17; }
+
+/* Highlight matched school col */
+.sm-table th.sm-school-col.sm-highlight-col {
+  background: #1a6e4f !important;
+}
+.sm-table td.sm-check-cell.sm-highlight-col {
+  background: #f0fff8;
+}
+
+/* active school filter badge */
+.sm-active-school-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #e8f4fb;
+  border: 1.5px solid #0B7BB3;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #0B7BB3;
+  margin-bottom: 12px;
+}
+
+.sm-active-school-badge button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #0B7BB3;
+  font-size: 1rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.sm-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .sm-filter-row { flex-direction: column; }
+  .sm-filter-group { min-width: 100%; }
+}
+</style>
+
+<div class="sm-page">
+
+  <!-- Header -->
+  <div class="sm-header">
+    <h1>🏫 Schulen-Matrix Stuttgart</h1>
+    <p>Welche Schule bietet welchen Bildungsgang? Filtere nach Schulart, Berufsfeld oder Schule – und finde auf einen Blick, was zu dir passt.</p>
+    <div class="sm-source-note">Quelle: Landeshauptstadt Stuttgart – Bildungsangebot 2026. Alle Angaben ohne Gewähr.</div>
+  </div>
+
+  <!-- Filters -->
+  <div class="sm-filters">
+    <div class="sm-filter-row">
+      <div class="sm-filter-group">
+        <label>🔍 Suchbegriff</label>
+        <input type="text" id="sm-search" placeholder="z. B. Mechatronik, Wirtschaft..." oninput="smFilter()">
+      </div>
+      <div class="sm-filter-group">
+        <label>📂 Schulart / Kategorie</label>
+        <select id="sm-cat" onchange="smFilter()">
+          <option value="">Alle Schularten</option>
+          <option value="Berufsschulen">Berufsschulen (dual)</option>
+          <option value="Sonderberufsschulen">Sonderberufsschulen</option>
+          <option value="VABO">VABO</option>
+          <option value="AVdual">Ausbildungsvorbereitung dual (AVdual)</option>
+          <option value="1BFS">1-jährige Berufsfachschule</option>
+          <option value="2BFS">2-jährige Berufsfachschule</option>
+          <option value="3BFS">3-jährige Berufsfachschule</option>
+          <option value="Berufskolleg">Berufskollegs</option>
+          <option value="Gymnasium">Berufliche Gymnasien</option>
+          <option value="Zweiter Bildungsweg">Zweiter Bildungsweg</option>
+          <option value="Fachschule">Fachschulen (Meisterschulen)</option>
+          <option value="Technikerschule">Technikerschulen</option>
+          <option value="Fachschule Gestaltung">Fachschulen für Gestaltung</option>
+          <option value="Sonstige Fachschule">Sonstige Fachschulen</option>
+          <option value="Akademie">Akademie für Betriebsmanagement</option>
+        </select>
+      </div>
+      <div class="sm-filter-group">
+        <label>🏛️ Schule</label>
+        <select id="sm-school" onchange="smFilter()">
+          <option value="">Alle Schulen</option>
+          <option>Gew. Schule für Farbe und Gestaltung</option>
+          <option>Gewerbliche Schule für Holztechnik</option>
+          <option>Gew. Schule im Hoppenlau</option>
+          <option>it.schule stuttgart</option>
+          <option>Johannes-Gutenberg-Schule</option>
+          <option>Kerschensteinerschule</option>
+          <option>Max-Eyth-Schule</option>
+          <option>Robert-Bosch-Schule</option>
+          <option>Robert-Mayer-Schule</option>
+          <option>Steinbeisschule</option>
+          <option>Werner-Siemens-Schule</option>
+          <option>Wilhelm-Maybach-Schule</option>
+          <option>Kaufmännische Schule 1</option>
+          <option>Kaufmännische Schule Stuttgart-Nord</option>
+          <option>Louis-Leitz-Schule</option>
+          <option>Johann-Friedrich-von-Cotta-Schule</option>
+          <option>Wirtschaftsgymnasium West</option>
+          <option>Hedwig-Dohm-Schule</option>
+          <option>Alexander-Fleming-Schule</option>
+          <option>Landwirtschaftliche Schule</option>
+        </select>
+      </div>
+      <div class="sm-filter-group" style="min-width:auto;">
+        <label>🎓 Zugang</label>
+        <select id="sm-access" onchange="smFilter()">
+          <option value="">Alle</option>
+          <option value="ohne">Ohne Abschluss</option>
+          <option value="hsa">Hauptschulabschluss</option>
+          <option value="mr">Mittlere Reife</option>
+          <option value="abitur">Abitur</option>
+          <option value="ausbildung">+ Berufsausbildung</option>
+        </select>
+      </div>
+      <button class="sm-reset-btn" onclick="smReset()">↺ Zurücksetzen</button>
+    </div>
+  </div>
+
+  <!-- Stats + view toggle -->
+  <div class="sm-header-actions">
+    <div class="sm-stats-bar">
+      <div class="sm-stat-pill">Angebote gesamt: <strong id="sm-count-total">0</strong></div>
+      <div class="sm-stat-pill">Angezeigt: <strong id="sm-count-shown">0</strong></div>
+    </div>
+    <div class="sm-view-toggle" style="margin-left: auto;">
+      <button class="sm-view-btn active" id="smv-table" onclick="smSetView('table')">📊 Matrix</button>
+      <button class="sm-view-btn" id="smv-cards" onclick="smSetView('cards')">🃏 Schulkarten</button>
+    </div>
+  </div>
+
+  <!-- Active school filter badge (hidden by default) -->
+  <div id="sm-school-badge" style="display:none" class="sm-active-school-badge">
+    <span>Gefiltert nach Schule: <strong id="sm-school-badge-name"></strong></span>
+    <button onclick="smClearSchool()" title="Filter entfernen">✕</button>
+  </div>
+
+  <!-- Table view -->
+  <div id="sm-view-table">
+    <div class="sm-table-wrapper">
+      <div class="sm-table-scroll">
+        <table class="sm-table" id="sm-main-table">
+          <thead id="sm-thead"></thead>
+          <tbody id="sm-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div id="sm-no-results-table" class="sm-no-results" style="display:none">
+      <div class="sm-no-icon">🔍</div>
+      <h3>Keine Treffer</h3>
+      <p>Versuche andere Filtereinstellungen.</p>
+    </div>
+  </div>
+
+  <!-- Card view -->
+  <div id="sm-view-cards" style="display:none">
+    <div class="sm-cards-wrapper" id="sm-cards-grid"></div>
+    <div id="sm-no-results-cards" class="sm-no-results" style="display:none">
+      <div class="sm-no-icon">🏫</div>
+      <h3>Keine Schulen gefunden</h3>
+      <p>Versuche andere Filtereinstellungen.</p>
+    </div>
+  </div>
+
+</div><!-- end sm-page -->
+
+<script>
+// =============================================
+// SCHULEN-MATRIX DATA
+// Exakt übertragen aus dem Bildungsangebot 2026
+// =============================================
+
+const SM_SCHOOLS = [
+  "Gew. Schule für Farbe und Gestaltung",
+  "Gewerbliche Schule für Holztechnik",
+  "Gew. Schule im Hoppenlau",
+  "it.schule stuttgart",
+  "Johannes-Gutenberg-Schule",
+  "Kerschensteinerschule",
+  "Max-Eyth-Schule",
+  "Robert-Bosch-Schule",
+  "Robert-Mayer-Schule",
+  "Steinbeisschule",
+  "Werner-Siemens-Schule",
+  "Wilhelm-Maybach-Schule",
+  "Kaufmännische Schule 1",
+  "Kaufmännische Schule Stuttgart-Nord",
+  "Louis-Leitz-Schule",
+  "Johann-Friedrich-von-Cotta-Schule",
+  "Wirtschaftsgymnasium West",
+  "Hedwig-Dohm-Schule",
+  "Alexander-Fleming-Schule",
+  "Landwirtschaftliche Schule"
+];
+
+// Schulkürzel für Tabellenheader
+const SM_SCHOOL_SHORT = [
+  "Farbe+Gest.",
+  "Holztechnik",
+  "Hoppenlau",
+  "it.schule",
+  "Gutenberg",
+  "Kersch.",
+  "Max-Eyth",
+  "Ro.-Bosch",
+  "Ro.-Mayer",
+  "Steinbeis",
+  "Werner-S.",
+  "Maybach",
+  "Kfm. 1",
+  "Kfm. Nord",
+  "Louis-Leitz",
+  "Cotta",
+  "WG West",
+  "Hedwig-D.",
+  "Fleming",
+  "Landwirtsch."
+];
+
+// ACCESS LEVELS
+const ACC = {
+  OHNE: 'ohne',
+  HSA: 'hsa',
+  MR: 'mr',
+  ABITUR: 'abitur',
+  AUSBILDUNG: 'ausbildung'
+};
+
+// MATRIX DATA
+// Format: { id, cat, catCode, label, schools: [0-based indices], access: [...], subcat }
+const SM_DATA = [
+
+  // ---- BERUFSSCHULEN ----
+  { id: 1, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Agrarwirtschaft", schools: [19], access: [ACC.HSA, ACC.MR] },
+  { id: 2, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Bautechnik", schools: [9], access: [ACC.HSA, ACC.MR] },
+  { id: 3, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Chemie, Physik und Biologie", schools: [0, 5], access: [ACC.HSA, ACC.MR] },
+  { id: 4, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Drucktechnik", schools: [3, 4], access: [ACC.HSA, ACC.MR] },
+  { id: 5, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Elektrotechnik", schools: [3, 7, 10], access: [ACC.HSA, ACC.MR] },
+  { id: 6, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Ernährung und Hauswirtschaft", schools: [2, 17], access: [ACC.HSA, ACC.MR] },
+  { id: 7, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Fahrzeugtechnik", schools: [7, 11], access: [ACC.HSA, ACC.MR] },
+  { id: 8, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Farbtechnik und Raumgestaltung", schools: [0, 5], access: [ACC.HSA, ACC.MR] },
+  { id: 9, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Gesundheit", schools: [5, 18], access: [ACC.HSA, ACC.MR] },
+  { id: 10, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Holztechnik", schools: [1], access: [ACC.HSA, ACC.MR] },
+  { id: 11, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Körperpflege", schools: [2], access: [ACC.HSA, ACC.MR] },
+  { id: 12, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Metalltechnik", schools: [6, 7, 8, 11], access: [ACC.HSA, ACC.MR] },
+  { id: 13, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Textiltechnik und Bekleidung", schools: [5], access: [ACC.HSA, ACC.MR] },
+  { id: 14, cat: "Berufsschulen", catCode: "Berufsschulen", label: "Wirtschaft und Verwaltung", schools: [3, 12, 13, 14, 15], access: [ACC.HSA, ACC.MR] },
+
+  // ---- SONDERBERUFSSCHULEN ----
+  { id: 15, cat: "Sonderberufsschulen", catCode: "Sonderberufsschulen", label: "Sonderberufsschulen (gewerblich, hauswirtschaftlich, landwirtschaftlich)", schools: [0, 1, 2, 7, 17, 19], access: [ACC.OHNE, ACC.HSA] },
+
+  // ---- VABO ----
+  { id: 16, cat: "VABO", catCode: "VABO", label: "Vorqualifizierungsjahr Arbeit/Beruf – Erwerb Deutschkenntnissen (VABO)", schools: [0, 1, 2, 4, 6, 8, 9, 14, 15, 17], access: [ACC.OHNE] },
+
+  // ---- AVdual ----
+  { id: 17, cat: "AVdual", catCode: "AVdual", label: "Ausbildungsvorbereitung dual (AVdual)", schools: [0, 1, 2, 4, 8, 9, 15, 17], access: [ACC.OHNE, ACC.HSA] },
+
+  // ---- 1-JÄHRIGE BERUFSFACHSCHULE ----
+  { id: 18, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Bautechnik", schools: [9], access: [ACC.HSA] },
+  { id: 19, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Druck-/Medientechnik", schools: [4], access: [ACC.HSA] },
+  { id: 20, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Fahrzeugtechnik", schools: [7, 11], access: [ACC.HSA] },
+  { id: 21, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Farbtechnik und Raumgestaltung", schools: [0], access: [ACC.HSA] },
+  { id: 22, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Fotografie", schools: [4], access: [ACC.HSA] },
+  { id: 23, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Glas-/Fensterbau", schools: [1], access: [ACC.HSA] },
+  { id: 24, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Holztechnik", schools: [1], access: [ACC.HSA] },
+  { id: 25, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Informationselektronik", schools: [3], access: [ACC.HSA] },
+  { id: 26, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Körperpflege", schools: [2], access: [ACC.HSA] },
+  { id: 27, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Metalltechnik – Feinwerk- und Metallbautechnik", schools: [8], access: [ACC.HSA] },
+  { id: 28, cat: "1-jährige Berufsfachschule", catCode: "1BFS", label: "Sanitär-, Heizungs-, Klimatechnik", schools: [8], access: [ACC.HSA] },
+
+  // ---- 2-JÄHRIGE BERUFSFACHSCHULE ----
+  { id: 29, cat: "2-jährige Berufsfachschule", catCode: "2BFS", label: "Elektrotechnik", schools: [10], access: [ACC.HSA] },
+  { id: 30, cat: "2-jährige Berufsfachschule", catCode: "2BFS", label: "Fahrzeugtechnik", schools: [7], access: [ACC.HSA] },
+  { id: 31, cat: "2-jährige Berufsfachschule", catCode: "2BFS", label: "Gesundheit und Pflege", schools: [18], access: [ACC.HSA] },
+  { id: 32, cat: "2-jährige Berufsfachschule", catCode: "2BFS", label: "Hauswirtschaft und Ernährung", schools: [17], access: [ACC.HSA] },
+  { id: 33, cat: "2-jährige Berufsfachschule", catCode: "2BFS", label: "Holztechnik", schools: [1], access: [ACC.HSA] },
+  { id: 34, cat: "2-jährige Berufsfachschule", catCode: "2BFS", label: "Metalltechnik", schools: [6, 8], access: [ACC.HSA] },
+  { id: 35, cat: "2-jährige Berufsfachschule", catCode: "2BFS", label: "Wirtschaft und Verwaltung (Wirtschaftsschule)", schools: [15, 16], access: [ACC.HSA] },
+
+  // ---- 3-JÄHRIGE BERUFSFACHSCHULE ----
+  { id: 36, cat: "3-jährige Berufsfachschule", catCode: "3BFS", label: "Sozialpädagogische Assistenz – praxisintegriert", schools: [17], access: [ACC.HSA] },
+
+  // ---- BERUFSKOLLEGS GEWERBLICH Vollzeit ----
+  { id: 37, cat: "Berufskollegs (gew., Vollzeit)", catCode: "Berufskolleg", label: "Chemisch-techn. / Pharmazeutisch-techn. / Physikalisch-techn. Assistent/-in (2 J.)", schools: [5], access: [ACC.MR] },
+  { id: 38, cat: "Berufskollegs (gew., Vollzeit)", catCode: "Berufskolleg", label: "Elektrotechnische Assistent/-in (2 J.)", schools: [10], access: [ACC.MR] },
+  { id: 39, cat: "Berufskollegs (gew., Vollzeit)", catCode: "Berufskolleg", label: "Grafik-Design (3 J.)", schools: [4], access: [ACC.MR] },
+  { id: 40, cat: "Berufskollegs (gew., Vollzeit)", catCode: "Berufskolleg", label: "Mode und Design (3 J.)", schools: [5], access: [ACC.MR] },
+  { id: 41, cat: "Berufskollegs (gew., Vollzeit)", catCode: "Berufskolleg", label: "Produktdesign (2 J.)", schools: [1, 6], access: [ACC.MR] },
+  { id: 42, cat: "Berufskollegs (gew., Vollzeit)", catCode: "Berufskolleg", label: "Technisches Berufskolleg I (1 J.)", schools: [0, 3, 9], access: [ACC.MR] },
+  { id: 43, cat: "Berufskollegs (gew., Vollzeit)", catCode: "Berufskolleg", label: "Technisches Berufskolleg II (1 J.)", schools: [0, 3, 9], access: [ACC.MR] },
+
+  // ---- BERUFSKOLLEGS GEWERBLICH Duales System ----
+  { id: 44, cat: "Berufskollegs (gew., Dual/Teilzeit)", catCode: "Berufskolleg", label: "Bautechnik – Duales Berufskolleg", schools: [9], access: [ACC.MR] },
+  { id: 45, cat: "Berufskollegs (gew., Dual/Teilzeit)", catCode: "Berufskolleg", label: "Elektronik – Duales Berufskolleg", schools: [7], access: [ACC.MR] },
+  { id: 46, cat: "Berufskollegs (gew., Dual/Teilzeit)", catCode: "Berufskolleg", label: "Metalltechnik – Duales Berufskolleg", schools: [7], access: [ACC.MR] },
+  { id: 47, cat: "Berufskollegs (gew., Dual/Teilzeit)", catCode: "Berufskolleg", label: "Sanitär-, Heizungs- und Klimatechnik – Duales BK", schools: [8], access: [ACC.MR] },
+
+  // ---- BERUFSKOLLEGS KAUFMÄNNISCH Vollzeit ----
+  { id: 48, cat: "Berufskollegs (kfm., Vollzeit)", catCode: "Berufskolleg", label: "Kaufmännisches Berufskolleg I – Höhere Handelsschule (1 J.)", schools: [16], access: [ACC.MR] },
+  { id: 49, cat: "Berufskollegs (kfm., Vollzeit)", catCode: "Berufskolleg", label: "Kaufmännisches Berufskolleg II – Höhere Handelsschule Oberstufe (1 J.)", schools: [16], access: [ACC.MR] },
+  { id: 50, cat: "Berufskollegs (kfm., Vollzeit)", catCode: "Berufskolleg", label: "Kaufmännisches Berufskolleg Fremdsprachen (2 J.)", schools: [13], access: [ACC.MR] },
+  { id: 51, cat: "Berufskollegs (kfm., Vollzeit)", catCode: "Berufskolleg", label: "Kaufmännisches Berufskolleg Wirtschaftsinformatik (2 J.)", schools: [13], access: [ACC.MR] },
+  { id: 52, cat: "Berufskollegs (kfm., Vollzeit)", catCode: "Berufskolleg", label: "Sport- und Vereinsmanagement (3 J.)", schools: [15], access: [ACC.MR] },
+
+  // ---- BERUFSKOLLEGS DUAL für Abiturient/-innen ----
+  { id: 53, cat: "Berufskollegs (Dual für Abitur)", catCode: "Berufskolleg", label: "Wirtschaft und Verwaltung – verschiedene (2–3 J., für Abiturient/-innen)", schools: [12, 13, 15], access: [ACC.ABITUR] },
+
+  // ---- BERUFSKOLLEGS HAUSWIRTSCHAFT / SOZIALES / LANDWIRTSCHAFT ----
+  { id: 54, cat: "Berufskollegs (hws./soz./landwirtsch.)", catCode: "Berufskolleg", label: "Biotechnologische Assistent/-in (2 J.)", schools: [19], access: [ACC.MR] },
+  { id: 55, cat: "Berufskollegs (hws./soz./landwirtsch.)", catCode: "Berufskolleg", label: "Ernährung und Haushaltsmanagement I (2 J.)", schools: [17], access: [ACC.MR] },
+  { id: 56, cat: "Berufskollegs (hws./soz./landwirtsch.)", catCode: "Berufskolleg", label: "Ernährung und Haushaltsmanagement II (1 J.)", schools: [17], access: [ACC.MR] },
+  { id: 57, cat: "Berufskollegs (hws./soz./landwirtsch.)", catCode: "Berufskolleg", label: "Gesundheit und Pflege I (1 J.)", schools: [18], access: [ACC.MR] },
+  { id: 58, cat: "Berufskollegs (hws./soz./landwirtsch.)", catCode: "Berufskolleg", label: "Gesundheit und Pflege II (1 J.)", schools: [18], access: [ACC.MR] },
+  { id: 59, cat: "Berufskollegs (hws./soz./landwirtsch.)", catCode: "Berufskolleg", label: "Sozialpädagogik (1 J., Vollzeit)", schools: [17], access: [ACC.MR] },
+  { id: 60, cat: "Berufskollegs (hws./soz./landwirtsch.)", catCode: "Berufskolleg", label: "Soziales – Duales BK (1 J., Teilzeit)", schools: [18], access: [ACC.MR] },
+  { id: 61, cat: "Berufskollegs (hws./soz./landwirtsch.)", catCode: "Berufskolleg", label: "Sozialpädagogik praxisintegriert – Fachschule (3 J., Teilzeit)", schools: [17], access: [ACC.MR] },
+
+  // ---- BERUFLICHE GYMNASIEN ----
+  { id: 62, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Technisches Gymnasium – Angewandte Naturwissenschaften (TGN)", schools: [5], access: [ACC.MR] },
+  { id: 63, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Technisches Gymnasium – Elektro- und Informationstechnik (TGE)", schools: [10], access: [ACC.MR] },
+  { id: 64, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Technisches Gymnasium – Gestaltungs- und Medientechnik (TGG)", schools: [4, 6], access: [ACC.MR] },
+  { id: 65, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Technisches Gymnasium – Informationstechnik (TGI)", schools: [3], access: [ACC.MR] },
+  { id: 66, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Technisches Gymnasium – Mechatronik (TGM)", schools: [6, 11], access: [ACC.MR] },
+  { id: 67, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Technisches Gymnasium – Technik und Management (TGTM)", schools: [6, 11], access: [ACC.MR] },
+  { id: 68, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Technisches Gymnasium – sechsjährige Aufbauform ab Klasse 8", schools: [6], access: [ACC.HSA, ACC.MR] },
+  { id: 69, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Technisches Gymnasium – Umwelttechnik (TGU)", schools: [9, 10], access: [ACC.MR] },
+  { id: 70, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Wirtschaftsgymnasium – Internationale Wirtschaft (WGI)", schools: [16], access: [ACC.MR] },
+  { id: 71, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Wirtschaftsgymnasium – Wirtschaft (WGW)", schools: [13, 14, 15, 16], access: [ACC.MR] },
+  { id: 72, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Ernährungswissenschaftliches Gymnasium (EG)", schools: [17], access: [ACC.MR] },
+  { id: 73, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Sozial- und Gesundheitswiss. Gymnasium – Gesundheit (SGGG)", schools: [18], access: [ACC.MR] },
+  { id: 74, cat: "Berufliche Gymnasien", catCode: "Gymnasium", label: "Sozial- und Gesundheitswiss. Gymnasium – Soziales (SGGS)", schools: [17], access: [ACC.MR] },
+
+  // ---- ZWEITER BILDUNGSWEG ----
+  { id: 75, cat: "Zweiter Bildungsweg", catCode: "Zweiter Bildungsweg", label: "Berufsaufbauschule zur Fachschulreife (gew.-techn. oder kfm.)", schools: [2, 12], access: [ACC.HSA, ACC.AUSBILDUNG] },
+  { id: 76, cat: "Zweiter Bildungsweg", catCode: "Zweiter Bildungsweg", label: "1-jähriges Berufskolleg zur Fachhochschulreife (versch. Richtungen)", schools: [2, 12, 18], access: [ACC.MR, ACC.AUSBILDUNG] },
+  { id: 77, cat: "Zweiter Bildungsweg", catCode: "Zweiter Bildungsweg", label: "Technische Oberschule oder Wirtschaftsoberschule", schools: [2, 12], access: [ACC.MR, ACC.AUSBILDUNG] },
+
+  // ---- FACHSCHULEN (MEISTERSCHULEN) ----
+  { id: 78, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Bautechnik", schools: [9], access: [ACC.AUSBILDUNG] },
+  { id: 79, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Chemie, Physik und Biologie", schools: [5], access: [ACC.AUSBILDUNG] },
+  { id: 80, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Drucktechnik", schools: [4], access: [ACC.AUSBILDUNG] },
+  { id: 81, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Ernährung", schools: [2], access: [ACC.AUSBILDUNG] },
+  { id: 82, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Fahrzeugtechnik", schools: [11], access: [ACC.AUSBILDUNG] },
+  { id: 83, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Farbtechnik und Raumgestaltung", schools: [0, 5], access: [ACC.AUSBILDUNG] },
+  { id: 84, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Gesundheit", schools: [18], access: [ACC.AUSBILDUNG] },
+  { id: 85, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Gießereitechnik", schools: [11], access: [ACC.AUSBILDUNG] },
+  { id: 86, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Holztechnik", schools: [1], access: [ACC.AUSBILDUNG] },
+  { id: 87, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Installations- und Heizungsbau", schools: [8], access: [ACC.AUSBILDUNG] },
+  { id: 88, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Metalltechnik", schools: [6, 8], access: [ACC.AUSBILDUNG] },
+  { id: 89, cat: "Fachschulen (Meisterschulen)", catCode: "Fachschule", label: "Textiltechnik und Bekleidung", schools: [5], access: [ACC.AUSBILDUNG] },
+
+  // ---- TECHNIKERSCHULEN ----
+  { id: 90, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Automatisierungstechnik / Mechatronik", schools: [10], access: [ACC.AUSBILDUNG] },
+  { id: 91, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Bautechnik", schools: [9], access: [ACC.AUSBILDUNG] },
+  { id: 92, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Druck- und Medientechnik", schools: [4], access: [ACC.AUSBILDUNG] },
+  { id: 93, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Elektrotechnik", schools: [10], access: [ACC.AUSBILDUNG] },
+  { id: 94, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Farb- und Lacktechnik", schools: [0], access: [ACC.AUSBILDUNG] },
+  { id: 95, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Gießereitechnik", schools: [11], access: [ACC.AUSBILDUNG] },
+  { id: 96, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Heizungs-, Lüftungs- und Klimatechnik", schools: [8], access: [ACC.AUSBILDUNG] },
+  { id: 97, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Holztechnik", schools: [1], access: [ACC.AUSBILDUNG] },
+  { id: 98, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Informationstechnik", schools: [3], access: [ACC.AUSBILDUNG] },
+  { id: 99, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Kraftfahrzeugtechnik", schools: [11], access: [ACC.AUSBILDUNG] },
+  { id: 100, cat: "Fachschulen für Technik (Technikerschulen)", catCode: "Technikerschule", label: "Maschinentechnik", schools: [6, 7, 11], access: [ACC.AUSBILDUNG] },
+
+  // ---- FACHSCHULEN FÜR GESTALTUNG ----
+  { id: 101, cat: "Fachschulen für Gestaltung", catCode: "Fachschule Gestaltung", label: "Farbtechnik und Raumgestaltung", schools: [0], access: [ACC.AUSBILDUNG] },
+  { id: 102, cat: "Fachschulen für Gestaltung", catCode: "Fachschule Gestaltung", label: "Möbel- und Innenraumgestaltung", schools: [1], access: [ACC.AUSBILDUNG] },
+  { id: 103, cat: "Fachschulen für Gestaltung", catCode: "Fachschule Gestaltung", label: "Werbegestaltung", schools: [0], access: [ACC.AUSBILDUNG] },
+
+  // ---- SONSTIGE FACHSCHULEN ----
+  { id: 104, cat: "Sonstige Fachschulen", catCode: "Sonstige Fachschule", label: "Management Fachrichtung Hauswirtschaft", schools: [17], access: [ACC.AUSBILDUNG] },
+  { id: 105, cat: "Sonstige Fachschulen", catCode: "Sonstige Fachschule", label: "Organisation und Führung", schools: [17], access: [ACC.AUSBILDUNG] },
+  { id: 106, cat: "Sonstige Fachschulen", catCode: "Sonstige Fachschule", label: "Visuelle Kommunikation", schools: [4], access: [ACC.AUSBILDUNG] },
+
+  // ---- AKADEMIE ----
+  { id: 107, cat: "Akademie für Betriebsmanagement im Handwerk", catCode: "Akademie", label: "Farbtechnik (Akademie)", schools: [0], access: [ACC.AUSBILDUNG] },
+  { id: 108, cat: "Akademie für Betriebsmanagement im Handwerk", catCode: "Akademie", label: "Kursangebote auf Nachfrage", schools: [0, 2, 4, 5, 6, 7, 8, 9, 18], access: [ACC.AUSBILDUNG] },
+
+];
+
+const SM_TOTAL = SM_DATA.length;
+
+// Category → CSS badge class mapping
+const SM_CAT_BADGE = {
+  "Berufsschulen": "sm-badge-bs",
+  "Sonderberufsschulen": "sm-badge-bs",
+  "VABO": "sm-badge-vabo",
+  "AVdual": "sm-badge-av",
+  "1BFS": "sm-badge-bfs1",
+  "2BFS": "sm-badge-bfs2",
+  "3BFS": "sm-badge-bfs3",
+  "Berufskolleg": "sm-badge-bk",
+  "Gymnasium": "sm-badge-gym",
+  "Zweiter Bildungsweg": "sm-badge-zweiter",
+  "Fachschule": "sm-badge-fachschule",
+  "Technikerschule": "sm-badge-technikerschule",
+  "Fachschule Gestaltung": "sm-badge-gestaltung",
+  "Sonstige Fachschule": "sm-badge-sonstige",
+  "Akademie": "sm-badge-sonstige",
+};
+
+// Access label
+const ACC_LABELS = {
+  ohne: { label: 'Ohne Abschluss', cls: 'ohne' },
+  hsa: { label: 'Hauptschulabschluss', cls: 'hsa' },
+  mr: { label: 'Mittlere Reife', cls: 'mr' },
+  abitur: { label: 'Abitur', cls: 'abitur' },
+  ausbildung: { label: '+ Berufsausbildung', cls: 'ausbildung' },
+};
+
+// State
+let smCurrentView = 'table';
+let smActiveSchoolFilter = '';
+
+// ---- FILTER LOGIC ----
+function smGetFiltered() {
+  const search = document.getElementById('sm-search').value.toLowerCase().trim();
+  const cat = document.getElementById('sm-cat').value;
+  const school = smActiveSchoolFilter || document.getElementById('sm-school').value;
+  const access = document.getElementById('sm-access').value;
+
+  return SM_DATA.filter(entry => {
+    // search
+    if (search && !entry.label.toLowerCase().includes(search) && !entry.cat.toLowerCase().includes(search)) return false;
+    // category
+    if (cat && entry.catCode !== cat && !entry.cat.includes(cat)) return false;
+    // school
+    if (school) {
+      const sIdx = SM_SCHOOLS.indexOf(school);
+      if (sIdx < 0 || !entry.schools.includes(sIdx)) return false;
+    }
+    // access
+    if (access && !entry.access.includes(access)) return false;
+    return true;
+  });
+}
+
+// ---- RENDER TABLE ----
+function smRenderTable(filtered) {
+  const tbody = document.getElementById('sm-tbody');
+  const thead = document.getElementById('sm-thead');
+  const schoolFilter = smActiveSchoolFilter || document.getElementById('sm-school').value;
+  
+  // Build header
+  let hRow = '<tr>';
+  hRow += '<th class="sm-prog-col sm-school-col" style="writing-mode:horizontal-tb;transform:none;height:auto;vertical-align:middle;padding:10px 14px;min-width:260px;">Bildungsgang / Programm</th>';
+  hRow += '<th class="sm-cat-col" style="writing-mode:horizontal-tb;transform:none;height:auto;vertical-align:middle;">Schulart</th>';
+  hRow += '<th class="sm-cat-col" style="writing-mode:horizontal-tb;transform:none;height:auto;vertical-align:middle;min-width:120px;">Zugang</th>';
+  SM_SCHOOLS.forEach((s, i) => {
+    const highlight = schoolFilter === s ? ' sm-highlight-col' : '';
+    hRow += `<th class="sm-school-col${highlight}" title="${s}">${SM_SCHOOL_SHORT[i]}</th>`;
+  });
+  hRow += '</tr>';
+  thead.innerHTML = hRow;
+
+  // Group by category
+  const cats = [];
+  const catMap = {};
+  filtered.forEach(entry => {
+    if (!catMap[entry.cat]) {
+      catMap[entry.cat] = [];
+      cats.push(entry.cat);
+    }
+    catMap[entry.cat].push(entry);
+  });
+
+  let html = '';
+  let rowIdx = 0;
+  cats.forEach(catName => {
+    const entries = catMap[catName];
+    // Section header
+    html += `<tr class="sm-section-header">
+      <td colspan="${3 + SM_SCHOOLS.length}">${catName}</td>
+    </tr>`;
+    
+    entries.forEach(entry => {
+      const odd = rowIdx % 2 === 1;
+      const trClass = odd ? 'sm-row-odd' : '';
+      
+      // Access badges
+      const accBadges = entry.access.map(a => {
+        const al = ACC_LABELS[a];
+        return `<span class="sm-zugangsbadge ${al.cls}">${al.label}</span>`;
+      }).join('');
+      
+      // School checkmarks
+      let schoolCells = SM_SCHOOLS.map((s, i) => {
+        const highlight = schoolFilter === s ? ' sm-highlight-col' : '';
+        const hasIt = entry.schools.includes(i);
+        return `<td class="sm-check-cell${highlight}">${hasIt ? '<span class="sm-check">✓</span>' : ''}</td>`;
+      }).join('');
+
+      html += `<tr class="${trClass}">
+        <td class="sm-prog-name">${entry.label}</td>
+        <td class="sm-cat-cell"><span class="sm-program-tag ${SM_CAT_BADGE[entry.catCode] || ''}">${entry.catCode}</span></td>
+        <td class="sm-cat-cell" style="white-space:nowrap;">${accBadges}</td>
+        ${schoolCells}
+      </tr>`;
+      rowIdx++;
+    });
+  });
+
+  tbody.innerHTML = html || '';
+
+  const noRes = document.getElementById('sm-no-results-table');
+  const wrapper = document.querySelector('.sm-table-wrapper');
+  if (filtered.length === 0) {
+    noRes.style.display = 'block';
+    wrapper.style.display = 'none';
+  } else {
+    noRes.style.display = 'none';
+    wrapper.style.display = 'block';
+  }
+}
+
+// ---- RENDER CARDS ----
+function smRenderCards(filtered) {
+  const grid = document.getElementById('sm-cards-grid');
+  const noRes = document.getElementById('sm-no-results-cards');
+  const schoolFilter = smActiveSchoolFilter || document.getElementById('sm-school').value;
+
+  if (schoolFilter) {
+    // Show one card for the selected school
+    const sIdx = SM_SCHOOLS.indexOf(schoolFilter);
+    if (sIdx < 0) { grid.innerHTML = ''; noRes.style.display = 'block'; return; }
+    
+    const schoolEntries = filtered.filter(e => e.schools.includes(sIdx));
+    if (schoolEntries.length === 0) { grid.innerHTML = ''; noRes.style.display = 'block'; return; }
+    
+    noRes.style.display = 'none';
+    const catMap = {};
+    schoolEntries.forEach(e => {
+      if (!catMap[e.cat]) catMap[e.cat] = [];
+      catMap[e.cat].push(e);
+    });
+    
+    let html = `<div class="sm-school-card" style="grid-column:1/-1">
+      <div class="sm-school-card-header">
+        <h3>🏛️ ${schoolFilter}</h3>
+        <p>${schoolEntries.length} Bildungsgänge angeboten</p>
+      </div>
+      <div class="sm-school-card-body">`;
+    
+    Object.entries(catMap).forEach(([cat, entries]) => {
+      html += `<div class="sm-program-section">
+        <div class="sm-program-section-title">${cat}</div>`;
+      entries.forEach(e => {
+        html += `<span class="sm-program-tag ${SM_CAT_BADGE[e.catCode] || ''}">${e.label}</span>`;
+      });
+      html += '</div>';
+    });
+    html += '</div></div>';
+    grid.innerHTML = html;
+    return;
+  }
+
+  // Build per-school cards
+  const schoolEntryMap = {};
+  SM_SCHOOLS.forEach((s, i) => { schoolEntryMap[i] = []; });
+  filtered.forEach(entry => {
+    entry.schools.forEach(si => {
+      if (schoolEntryMap[si]) schoolEntryMap[si].push(entry);
+    });
+  });
+
+  const activeSchools = SM_SCHOOLS.filter((s, i) => schoolEntryMap[i].length > 0);
+  
+  if (activeSchools.length === 0) {
+    grid.innerHTML = '';
+    noRes.style.display = 'block';
+    return;
+  }
+  noRes.style.display = 'none';
+
+  let html = '';
+  SM_SCHOOLS.forEach((school, si) => {
+    const entries = schoolEntryMap[si];
+    if (entries.length === 0) return;
+
+    const catMap = {};
+    entries.forEach(e => {
+      if (!catMap[e.cat]) catMap[e.cat] = [];
+      catMap[e.cat].push(e);
+    });
+
+    html += `<div class="sm-school-card">
+      <div class="sm-school-card-header">
+        <h3>${school}</h3>
+        <p>${entries.length} Bildungsgang${entries.length !== 1 ? 'e' : ''} • <span style="cursor:pointer;text-decoration:underline;opacity:0.9;" onclick="smSelectSchool('${school.replace(/'/g,"\\'")}')">Nur diese Schule →</span></p>
+      </div>
+      <div class="sm-school-card-body">`;
+    
+    Object.entries(catMap).forEach(([cat, catEntries]) => {
+      html += `<div class="sm-program-section">
+        <div class="sm-program-section-title">${cat}</div>`;
+      catEntries.forEach(e => {
+        html += `<span class="sm-program-tag ${SM_CAT_BADGE[e.catCode] || ''}">${e.label}</span>`;
+      });
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+
+  grid.innerHTML = html;
+}
+
+// ---- MAIN FILTER & RENDER ----
+function smFilter() {
+  const filtered = smGetFiltered();
+  document.getElementById('sm-count-total').textContent = SM_TOTAL;
+  document.getElementById('sm-count-shown').textContent = filtered.length;
+  
+  if (smCurrentView === 'table') {
+    smRenderTable(filtered);
+  } else {
+    smRenderCards(filtered);
+  }
+}
+
+// ---- VIEW TOGGLE ----
+function smSetView(mode) {
+  smCurrentView = mode;
+  document.getElementById('sm-view-table').style.display = mode === 'table' ? 'block' : 'none';
+  document.getElementById('sm-view-cards').style.display = mode === 'cards' ? 'block' : 'none';
+  document.getElementById('smv-table').classList.toggle('active', mode === 'table');
+  document.getElementById('smv-cards').classList.toggle('active', mode === 'cards');
+  smFilter();
+}
+
+// ---- SCHOOL QUICK FILTER ----
+function smSelectSchool(name) {
+  smActiveSchoolFilter = name;
+  document.getElementById('sm-school').value = name;
+  document.getElementById('sm-school-badge-name').textContent = name;
+  document.getElementById('sm-school-badge').style.display = 'flex';
+  smFilter();
+}
+
+function smClearSchool() {
+  smActiveSchoolFilter = '';
+  document.getElementById('sm-school').value = '';
+  document.getElementById('sm-school-badge').style.display = 'none';
+  smFilter();
+}
+
+// ---- RESET ----
+function smReset() {
+  document.getElementById('sm-search').value = '';
+  document.getElementById('sm-cat').value = '';
+  document.getElementById('sm-school').value = '';
+  document.getElementById('sm-access').value = '';
+  smActiveSchoolFilter = '';
+  document.getElementById('sm-school-badge').style.display = 'none';
+  smFilter();
+}
+
+// Initialize on tab switch  
+document.addEventListener('DOMContentLoaded', function() {
+  smFilter();
+});
+
+// Also init when the tab is first shown (in case DOMContentLoaded already fired)
+(function() {
+  smFilter();
+})();
+</script>
+
+</div>
+<!-- END schulmatrix-tab -->
 
 </body>
 </html>
